@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: { serverActions: { bodySizeLimit: "3mb" } },
   // Every page depends on the signed-in user, so static prerendering/caching
   // buys nothing here; render on each request instead.
   turbopack: {

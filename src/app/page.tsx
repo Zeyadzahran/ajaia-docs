@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ImportButton } from "@/components/ImportButton";
 import { createDocumentAction } from "@/app/actions";
 import { AppHeader } from "@/components/AppHeader";
 import { listDocumentsFor, type DocumentSummary } from "@/lib/documents";
@@ -14,12 +15,17 @@ export default async function HomePage() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Documents</h1>
-          <form action={createDocumentAction}>
-            <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              + New document
-            </button>
-          </form>
+          <div className="flex items-start gap-2">
+            <ImportButton />
+            <form action={createDocumentAction}>
+              <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                + New document
+              </button>
+            </form>
+          </div>
         </div>
+
+        <p className="mt-2 text-sm text-slate-500">Import .txt, .md or .docx (max 2 MB)</p>
 
         <DocumentList
           title="My documents"
@@ -36,7 +42,15 @@ export default async function HomePage() {
   );
 }
 
-function DocumentList({ title, docs, empty }: { title: string; docs: DocumentSummary[]; empty: string }) {
+function DocumentList({
+  title,
+  docs,
+  empty,
+}: {
+  title: string;
+  docs: DocumentSummary[];
+  empty: string;
+}) {
   return (
     <section className="mt-8">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">

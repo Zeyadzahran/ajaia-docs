@@ -1,0 +1,4 @@
+Project notes
+This line stays in the same paragraph.
+
+A new paragraph starts here.

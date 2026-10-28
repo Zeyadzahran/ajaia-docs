@@ -4,6 +4,7 @@ import { EditorContent, useEditor, useEditorState, type Editor, type JSONContent
 import { Placeholder } from "@tiptap/extensions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { saveContent } from "@/app/doc/[id]/actions";
+import { ExportMenu } from "@/components/ExportMenu";
 import { editorExtensions } from "@/lib/editor-schema";
 
 type SaveState = "saved" | "unsaved" | "saving" | "error";
@@ -101,6 +102,7 @@ export function DocumentEditor({
               <SaveStatus state={saveState} error={error} onRetry={locked || !editor ? undefined : () => save(editor)} />
             </>
           )}
+          <ExportMenu editor={editor} />
         </div>
       </div>
       <div className="flex-1 px-4 py-8">
