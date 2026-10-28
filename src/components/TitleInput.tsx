@@ -38,7 +38,7 @@ export function TitleInput({ documentId, initialTitle }: { documentId: string; i
   }
 
   return (
-    <div className="min-w-0 flex-1">
+    <div className="min-w-[10rem] flex-1">
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -53,7 +53,7 @@ export function TitleInput({ documentId, initialTitle }: { documentId: string; i
         }}
         maxLength={MAX_TITLE_LENGTH}
         aria-label="Document title"
-        className="w-full truncate rounded-md border border-transparent px-2 py-1 text-lg font-semibold hover:border-slate-300 focus:border-blue-500 focus:outline-none"
+        className="w-full truncate rounded-md border border-transparent px-2 py-1 text-lg font-semibold hover:border-ink-300 focus:border-brand-500 focus:outline-none"
       />
       {error && (
         <p role="alert" className="px-2 text-sm text-red-700">

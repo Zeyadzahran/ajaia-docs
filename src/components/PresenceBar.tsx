@@ -59,7 +59,7 @@ export function PresenceBar({ documentId }: { documentId: string }) {
           </span>
         ))}
       </div>
-      <span className="text-sm text-slate-600">{label}</span>
+      <span className="text-sm text-ink-600">{label}</span>
     </div>
   );
 }

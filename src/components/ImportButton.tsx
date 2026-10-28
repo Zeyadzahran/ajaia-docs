@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { UploadSimpleIcon } from "@phosphor-icons/react";
 import { importDocument } from "@/app/import/actions";
+import { button } from "@/components/ui";
 import { validateImportFile } from "@/lib/import-rules";
 
 export function ImportButton() {
@@ -50,8 +52,9 @@ export function ImportButton() {
         type="button"
         disabled={pending}
         onClick={() => input.current?.click()}
-        className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+        className={button("secondary")}
       >
+        <UploadSimpleIcon size={16} />
         {pending ? "Importing…" : "Import file"}
       </button>
       {error && (

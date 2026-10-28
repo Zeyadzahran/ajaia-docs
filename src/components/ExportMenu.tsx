@@ -2,6 +2,8 @@
 
 import type { Editor } from "@tiptap/react";
 import { useEffect, useRef, useState } from "react";
+import { CaretDownIcon, DownloadSimpleIcon, FileTextIcon, PrinterIcon } from "@phosphor-icons/react";
+import { button } from "@/components/ui";
 import { exportMarkdown } from "@/lib/export-markdown";
 
 export function ExportMenu({ editor }: { editor: Editor | null }) {
@@ -62,24 +64,28 @@ export function ExportMenu({ editor }: { editor: Editor | null }) {
       onToggle={(event) => setOpen(event.currentTarget.open)}
       className="relative shrink-0 text-sm"
     >
-      <summary className="cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50">
+      <summary className={`${button("secondary")} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}>
+        <DownloadSimpleIcon size={16} />
         Export
+        <CaretDownIcon size={12} className="text-ink-500" />
       </summary>
-      <div className="absolute right-0 top-full z-20 mt-1 min-w-44 rounded-md border border-slate-200 bg-white p-1 shadow-sm">
+      <div className="absolute right-0 top-full z-20 mt-1.5 min-w-52 rounded-xl bg-white p-1 shadow-lg ring-1 ring-ink-200">
         <button
           type="button"
           disabled={!editor}
           onClick={download}
-          className="block w-full rounded px-3 py-2 text-left hover:bg-slate-100 disabled:opacity-50"
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-ink-100 disabled:opacity-50"
         >
+          <FileTextIcon size={16} className="text-ink-500" />
           Markdown (.md)
         </button>
         <button
           type="button"
           onClick={print}
-          className="block w-full rounded px-3 py-2 text-left hover:bg-slate-100"
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-ink-100"
         >
-          Print / Save as PDF
+          <PrinterIcon size={16} className="text-ink-500" />
+          Print or save as PDF
         </button>
       </div>
     </details>
