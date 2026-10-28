@@ -17,13 +17,20 @@ export type DocumentSummary = {
 
 export const documentId = z.uuid();
 
+// Prisma ignores undefined filter values, so a missing userId would match every document.
+function assertUserId(userId: string) {
+  if (!userId) throw new Error("A user id is required for access checks.");
+}
+
 // Owner, or anyone the document was shared with.
 export function canView(userId: string) {
+  assertUserId(userId);
   return { OR: [{ ownerId: userId }, { shares: { some: { userId } } }] };
 }
 
 // Owner, or shared with the EDITOR role.
 export function canEdit(userId: string) {
+  assertUserId(userId);
   return { OR: [{ ownerId: userId }, { shares: { some: { userId, role: "EDITOR" as const } } }] };
 }
 

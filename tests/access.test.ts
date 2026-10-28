@@ -18,8 +18,9 @@ describe.skipIf(!hasDb)("document access rules", async () => {
     docId = await createDocument("alice", "Access test document");
   });
 
+  // Never use deleteMany here: with an undefined id Prisma drops the filter and deletes every row.
   afterAll(async () => {
-    await prisma.document.deleteMany({ where: { id: docId } });
+    if (docId) await prisma.document.delete({ where: { id: docId } });
   });
 
   it("only the owner can open a document that isn't shared", async () => {
@@ -60,6 +61,13 @@ describe.skipIf(!hasDb)("document access rules", async () => {
     expect(await shareDocument(docId, "alice", { email: "not-an-email", role: "EDITOR" })).toMatchObject({ ok: false });
     expect(await shareDocument(docId, "alice", { email: "bob@example.com", role: "ADMIN" })).toMatchObject({ ok: false });
     expect(await shareDocument(docId, "alice", { email: "alice@example.com", role: "EDITOR" })).toMatchObject({ ok: false });
+  });
+
+  it("a missing user id never matches every row", async () => {
+    expect(await removeShare(docId, "alice", undefined)).toMatchObject({ ok: false });
+    expect(await getDocumentFor(docId, "bob")).toMatchObject({ role: "editor" });
+    await expect(getDocumentFor(docId, "")).rejects.toThrow(/user id is required/);
+    expect(await updateDocument(docId, "", { title: "x" }).catch(() => false)).toBe(false);
   });
 
   it("removing a share takes access away", async () => {

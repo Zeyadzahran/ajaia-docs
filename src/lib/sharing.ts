@@ -61,8 +61,12 @@ export async function shareDocument(
   return { ok: true, shares: (await listShares(docId, ownerId)) ?? [], message };
 }
 
-export async function removeShare(docId: string, ownerId: string, userId: string): Promise<Result<{ shares: Share[] }>> {
+export async function removeShare(docId: string, ownerId: string, userId: unknown): Promise<Result<{ shares: Share[] }>> {
+  // userId comes from the client; an undefined value in a Prisma filter would match every share.
+  if (typeof userId !== "string" || !userId) return { ok: false, error: "Pick a person to remove." };
   if (!(await isOwner(docId, ownerId))) return { ok: false, error: NOT_OWNER };
-  await prisma.documentShare.deleteMany({ where: { documentId: docId, userId } });
+  await prisma.documentShare.delete({ where: { documentId_userId: { documentId: docId, userId } } }).catch(() => {
+    // Already removed (e.g. in another tab): the list below shows the current state.
+  });
   return { ok: true, shares: (await listShares(docId, ownerId)) ?? [] };
 }
