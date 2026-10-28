@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "setup": "npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

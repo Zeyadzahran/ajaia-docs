@@ -8,6 +8,8 @@ const USERS = [
   { id: "carol", name: "Carol Diaz", email: "carol@example.com" },
 ];
 
+// Fixed id so re-running the seed never duplicates the welcome doc, even if it was renamed.
+const WELCOME_ID = "00000000-0000-4000-8000-000000000001";
 const WELCOME_TITLE = "Welcome to Ajaia Docs";
 
 const WELCOME_CONTENT = {
@@ -30,17 +32,17 @@ async function main() {
     await prisma.user.upsert({ where: { id: user.id }, update: user, create: user });
   }
 
-  const existing = await prisma.document.findFirst({ where: { ownerId: "alice", title: WELCOME_TITLE } });
-  if (!existing) {
-    await prisma.document.create({
-      data: {
-        title: WELCOME_TITLE,
-        content: WELCOME_CONTENT,
-        ownerId: "alice",
-        shares: { create: { userId: "bob" } },
-      },
-    });
-  }
+  // update: {} keeps any edits reviewers made to the doc.
+  await prisma.document.upsert({
+    where: { id: WELCOME_ID },
+    update: {},
+    create: { id: WELCOME_ID, title: WELCOME_TITLE, content: WELCOME_CONTENT, ownerId: "alice" },
+  });
+  await prisma.documentShare.upsert({
+    where: { documentId_userId: { documentId: WELCOME_ID, userId: "bob" } },
+    update: {},
+    create: { documentId: WELCOME_ID, userId: "bob" },
+  });
 
   console.log(`Seeded ${USERS.length} users.`);
 }
