@@ -1,6 +1,7 @@
 // All document queries go through here. Every read/write is scoped to the
 // current user, so the access rule lives in one place: canAccess().
 import { z } from "zod";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "./db";
 
 export type Role = "owner" | "shared";
@@ -49,6 +50,17 @@ export async function getDocumentFor(id: string, userId: string) {
   });
   if (!doc) return null;
   return { ...doc, role: (doc.ownerId === userId ? "owner" : "shared") as Role };
+}
+
+// Returns false when the document doesn't exist or the user can't access it.
+export async function updateDocument(
+  id: string,
+  userId: string,
+  data: { title?: string; content?: Prisma.InputJsonValue },
+) {
+  if (!documentId.safeParse(id).success) return false;
+  const { count } = await prisma.document.updateMany({ where: { id, ...canAccess(userId) }, data });
+  return count === 1;
 }
 
 export async function createDocument(ownerId: string, title = "Untitled document") {
