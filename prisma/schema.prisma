@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Seeded users (auth is mocked for this review build), see prisma/seed.ts.
+model User {
+  id     String          @id
+  name   String
+  email  String          @unique
+  owned  Document[]
+  shares DocumentShare[]
+
+  @@map("users")
+}
+
+model Document {
+  id        String          @id @default(uuid()) @db.Uuid
+  title     String          @default("Untitled document")
+  // TipTap (ProseMirror) JSON, so formatting round-trips exactly
+  content   Json            @default("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]}")
+  ownerId   String          @map("owner_id")
+  owner     User            @relation(fields: [ownerId], references: [id])
+  shares    DocumentShare[]
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  @@index([ownerId])
+  @@map("documents")
+}
+
+// One row = "this document is shared with this user".
+model DocumentShare {
+  documentId String   @map("document_id") @db.Uuid
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@id([documentId, userId])
+  @@index([userId])
+  @@map("document_shares")
+}
