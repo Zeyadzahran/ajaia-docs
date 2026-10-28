@@ -50,67 +50,110 @@ export function HistoryButton({ documentId, canRestore }: { documentId: string; 
         History
       </button>
 
+      {/* A full-height side panel: room to scan versions by day, like a document's history sidebar. */}
       <dialog
         ref={dialog}
         aria-labelledby="history-title"
-        className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-xl p-0 shadow-2xl ring-1 ring-ink-200 backdrop:bg-ink-900/30 backdrop:backdrop-blur-[2px]"
+        className="m-0 ml-auto h-dvh max-h-none w-full max-w-md bg-white p-0 shadow-2xl ring-1 ring-ink-200 backdrop:bg-ink-900/20 open:animate-[slide-in_200ms_ease-out]"
       >
-        <div className="p-6">
-          <div className="flex items-start justify-between">
+        <div className="flex h-full flex-col">
+          <div className="flex items-start justify-between border-b border-ink-200 px-5 py-4">
             <div>
-              <h2 id="history-title" className="text-lg font-semibold">
+              <h2 id="history-title" className="flex items-center gap-2 text-base font-semibold">
+                <ClockCounterClockwiseIcon size={18} className="text-ink-500" />
                 Version history
               </h2>
-              <p className="text-sm text-ink-500">A version is saved at most every 5 minutes while editing.</p>
+              <p className="mt-0.5 text-sm text-ink-500">Saved automatically, at most every 5 minutes.</p>
             </div>
             <button
               type="button"
               onClick={() => dialog.current?.close()}
               aria-label="Close"
-              className={`${button("ghost", "icon")} -mr-2 -mt-1`}
+              className={`${button("ghost", "icon")} -mr-2`}
             >
               <XIcon size={18} />
             </button>
           </div>
 
-          {error && (
-            <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          )}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {error && (
+              <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </p>
+            )}
+            {versions === null && pending && <p className="text-sm text-ink-500">Loading versions…</p>}
+            {versions?.length === 0 && (
+              <p className="text-sm text-ink-500">No versions yet. The first one is saved when this document is edited.</p>
+            )}
 
-          {versions === null && pending && <p className="mt-4 text-sm text-ink-500">Loading…</p>}
-          {versions?.length === 0 && (
-            <p className="mt-4 text-sm text-ink-500">No versions yet. One is saved the first time this document is edited.</p>
-          )}
-
-          <ul className="mt-4 max-h-96 divide-y divide-ink-100 overflow-y-auto">
-            {versions?.map((v) => (
-              <li key={v.id} className="flex items-start justify-between gap-3 py-3 text-sm">
-                <span className="min-w-0">
-                  <span className="block font-medium">
-                    {new Date(v.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                  </span>
-                  <span className="block text-ink-500">
-                    by {v.createdByName} · {v.title}
-                  </span>
-                  <span className="mt-1 block truncate text-ink-700">{v.excerpt}</span>
-                </span>
-                {canRestore && (
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => restore(v.id)}
-                    className={button("secondary", "sm")}
-                  >
-                    Restore
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+            {versions &&
+              groupByDay(versions).map(([day, items]) => (
+                <section key={day} className="mb-6">
+                  <h3 className="mb-2 text-xs font-medium text-ink-500">{day}</h3>
+                  <ol className="relative space-y-1 border-l border-ink-200 pl-5">
+                    {items.map((v) => {
+                      const latest = v.id === versions[0].id;
+                      return (
+                        <li key={v.id} className="group relative rounded-lg p-3 hover:bg-ink-50">
+                          <span
+                            aria-hidden
+                            className={`absolute -left-[25px] top-4 h-2.5 w-2.5 rounded-full ring-4 ring-white ${latest ? "bg-brand-600" : "bg-ink-300"}`}
+                          />
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-semibold text-ink-900">
+                              {new Date(v.createdAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                              {latest && (
+                                <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 ring-1 ring-brand-100">
+                                  Latest
+                                </span>
+                              )}
+                            </span>
+                            {canRestore && (
+                              <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => restore(v.id)}
+                                className={`${button("secondary", "sm")} opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100`}
+                              >
+                                Restore
+                              </button>
+                            )}
+                          </div>
+                          <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-500">
+                            <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-50 text-[10px] font-semibold text-brand-700">
+                              {v.createdByName[0]}
+                            </span>
+                            {v.createdByName}
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-ink-800">{v.title}</p>
+                          <p className="mt-0.5 line-clamp-2 text-sm text-ink-600">{v.excerpt}</p>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </section>
+              ))}
+          </div>
         </div>
       </dialog>
     </>
   );
+}
+
+// Groups versions (newest first) under "Today", "Yesterday" or the date.
+function groupByDay(versions: VersionSummary[]) {
+  const groups = new Map<string, VersionSummary[]>();
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86_400_000).toDateString();
+  for (const v of versions) {
+    const date = new Date(v.createdAt);
+    const day =
+      date.toDateString() === today
+        ? "Today"
+        : date.toDateString() === yesterday
+          ? "Yesterday"
+          : date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    groups.set(day, [...(groups.get(day) ?? []), v]);
+  }
+  return [...groups.entries()];
 }
