@@ -11,9 +11,9 @@ Sign-in is mocked: pick a seeded user on the sign-in page (no passwords).
 
 | User | Email | Has |
 |---|---|---|
-| Alice Chen | alice@example.com | Owns "Welcome to Ajaia Docs", shared with Bob |
-| Bob Martin | bob@example.com | Sees Alice's doc under *Shared with me* |
-| Carol Diaz | carol@example.com | No documents; use her to check access is denied |
+| Alice Chen | alice@example.com | Owns "Welcome to Ajaia Docs" and can manage who has access |
+| Bob Martin | bob@example.com | **Can edit** Alice's doc (under *Shared with me*) |
+| Carol Diaz | carol@example.com | **Can view** Alice's doc (read-only) |
 
 ## Run locally
 

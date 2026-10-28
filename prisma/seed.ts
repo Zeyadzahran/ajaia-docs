@@ -19,9 +19,11 @@ const WELCOME_CONTENT = {
     {
       type: "paragraph",
       content: [
-        { type: "text", text: "This document is owned by Alice and " },
-        { type: "text", marks: [{ type: "bold" }], text: "shared with Bob" },
-        { type: "text", text: ", so you can see both sides of sharing right away." },
+        { type: "text", text: "This document is owned by Alice. " },
+        { type: "text", marks: [{ type: "bold" }], text: "Bob can edit" },
+        { type: "text", text: " it and " },
+        { type: "text", marks: [{ type: "bold" }], text: "Carol can only view" },
+        { type: "text", text: " it, so you can try every side of sharing right away." },
       ],
     },
   ],
@@ -38,11 +40,14 @@ async function main() {
     update: {},
     create: { id: WELCOME_ID, title: WELCOME_TITLE, content: WELCOME_CONTENT, ownerId: "alice" },
   });
-  await prisma.documentShare.upsert({
-    where: { documentId_userId: { documentId: WELCOME_ID, userId: "bob" } },
-    update: {},
-    create: { documentId: WELCOME_ID, userId: "bob" },
-  });
+  // Bob can edit and Carol can only view, so both roles can be tried right away.
+  for (const [userId, role] of [["bob", "EDITOR"], ["carol", "VIEWER"]] as const) {
+    await prisma.documentShare.upsert({
+      where: { documentId_userId: { documentId: WELCOME_ID, userId } },
+      update: {},
+      create: { documentId: WELCOME_ID, userId, role },
+    });
+  }
 
   console.log(`Seeded ${USERS.length} users.`);
 }

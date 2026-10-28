@@ -35,13 +35,21 @@ model Document {
 
 // One row = "this document is shared with this user".
 model DocumentShare {
-  documentId String   @map("document_id") @db.Uuid
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  userId     String   @map("user_id")
-  user       User     @relation(fields: [userId], references: [id])
-  createdAt  DateTime @default(now()) @map("created_at")
+  documentId String    @map("document_id") @db.Uuid
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id])
+  role       ShareRole @default(EDITOR)
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@id([documentId, userId])
   @@index([userId])
   @@map("document_shares")
+}
+
+enum ShareRole {
+  VIEWER
+  EDITOR
+
+  @@map("share_role")
 }

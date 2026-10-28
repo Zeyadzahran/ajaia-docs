@@ -11,7 +11,15 @@ type SaveState = "saved" | "unsaved" | "saving" | "error";
 
 const SAVE_DELAY_MS = 800;
 
-export function DocumentEditor({ documentId, initialContent }: { documentId: string; initialContent: JSONContent }) {
+export function DocumentEditor({
+  documentId,
+  initialContent,
+  readOnly = false,
+}: {
+  documentId: string;
+  initialContent: JSONContent;
+  readOnly?: boolean;
+}) {
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -47,6 +55,7 @@ export function DocumentEditor({ documentId, initialContent }: { documentId: str
   const editor = useEditor({
     extensions: [...editorExtensions, Placeholder.configure({ placeholder: "Start writing…" })],
     content: initialContent,
+    editable: !readOnly,
     immediatelyRender: false,
     // If stored content ever fails to load, lock the editor instead of letting an
     // autosave replace the document with the empty fallback.
@@ -84,10 +93,16 @@ export function DocumentEditor({ documentId, initialContent }: { documentId: str
     <div className="flex flex-1 flex-col">
       <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-2">
-          {/* Mount the toolbar only once the editor exists: useEditorState won't notice it arriving later. */}
-          {editor ? <Toolbar editor={editor} /> : <div className="h-9" />}
+          {readOnly ? (
+            <p className="flex h-9 items-center text-sm text-slate-600">View only. Ask the owner for edit access.</p>
+          ) : (
+            <>
+              {/* Mount the toolbar only once the editor exists: useEditorState won't notice it arriving later. */}
+              {editor ? <Toolbar editor={editor} /> : <div className="h-9" />}
+              <SaveStatus state={saveState} error={error} onRetry={locked || !editor ? undefined : () => save(editor)} />
+            </>
+          )}
           <ExportMenu editor={editor} />
-          <SaveStatus state={saveState} error={error} onRetry={locked || !editor ? undefined : () => save(editor)} />
         </div>
       </div>
       <div className="flex-1 px-4 py-8">
