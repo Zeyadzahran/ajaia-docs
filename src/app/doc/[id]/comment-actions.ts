@@ -5,7 +5,6 @@ import { getCurrentUser } from "@/lib/session";
 import { documentId } from "@/lib/documents";
 import {
   addComment,
-  commentInput,
   deleteComment,
   listComments,
   setCommentResolved,
@@ -34,15 +33,7 @@ export async function listCommentsAction(id: string): Promise<CommentResult> {
 }
 
 export async function addCommentAction(id: string, input: unknown): Promise<CommentResult> {
-  return run(async (userId) => {
-    if (!documentId.safeParse(id).success) return { ok: false, error: UNAVAILABLE };
-    // Check access before reporting body errors, so inaccessible docs remain indistinguishable.
-    const access = await listComments(id, userId);
-    if (!access.ok) return access;
-    const parsed = commentInput.safeParse(input);
-    if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-    return addComment(id, userId, parsed.data);
-  });
+  return run((userId) => addComment(id, userId, input));
 }
 
 export async function resolveCommentAction(input: unknown): Promise<CommentResult> {

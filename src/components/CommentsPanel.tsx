@@ -43,7 +43,9 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
   useEffect(() => {
     const requests = request;
     const initial = setTimeout(() => void load(), 0);
-    const timer = setInterval(() => void load(), 10_000);
+    const timer = setInterval(() => {
+      if (!document.hidden) void load();
+    }, 10_000);
     return () => {
       clearTimeout(initial);
       clearInterval(timer);
@@ -84,6 +86,8 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
     if (text) setQuote(text.length > 300 ? `${text.slice(0, 299)}…` : text);
   }
 
+  const openCount = comments.filter((comment) => !comment.resolvedAt).length;
+  const resolvedCount = comments.length - openCount;
   const visible = comments.filter((comment) => showResolved || !comment.resolvedAt);
 
   return (
@@ -91,7 +95,7 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
       aria-label="Document comments"
       className="border-t border-slate-200 bg-white p-4 lg:border-l lg:border-t-0 print:hidden"
     >
-      <h2 className="text-lg font-semibold">Comments ({comments.length})</h2>
+      <h2 className="text-lg font-semibold">Comments ({openCount})</h2>
       <label className="mt-2 flex items-center gap-2 text-sm text-slate-600">
         <input
           type="checkbox"
@@ -99,6 +103,7 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
           onChange={(event) => setShowResolved(event.target.checked)}
         />
         Show resolved
+        {resolvedCount > 0 && <span className="text-xs text-slate-500">+{resolvedCount} resolved</span>}
       </label>
 
       <form
@@ -232,11 +237,12 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
                   <button
                     type="button"
                     disabled={pending !== null}
-                    onClick={() =>
+                    onClick={() => {
+                      if (!confirm("Delete this comment?")) return;
                       void run(comment.id, () =>
                         deleteCommentAction({ documentId, commentId: comment.id }),
-                      )
-                    }
+                      );
+                    }}
                     className="text-red-700 hover:underline disabled:opacity-50"
                   >
                     Delete
