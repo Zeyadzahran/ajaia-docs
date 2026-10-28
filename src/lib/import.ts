@@ -4,18 +4,10 @@ import mammoth from "mammoth";
 import { marked } from "marked";
 import { editorExtensions } from "./editor-schema";
 import { contentSchema } from "./validation";
-
-export const MAX_FILE_BYTES = 2 * 1024 * 1024;
-export const FILE_ERROR = "Only .txt, .md and .docx files up to 2 MB are supported.";
-
-export function validateImportFile(name: string, size: number): string | null {
-  if (!/\.(txt|md|docx)$/i.test(name) || size > MAX_FILE_BYTES) return FILE_ERROR;
-  if (size === 0) return "This file is empty. Choose a file with some text.";
-  return null;
-}
+import { SUPPORTED_FILE_EXTENSION, validateImportFile } from "./import-rules";
 
 export function importTitle(name: string) {
-  return name.replace(/\.(txt|md|docx)$/i, "").trim().slice(0, 200) || "Imported document";
+  return name.replace(SUPPORTED_FILE_EXTENSION, "").trim().slice(0, 200) || "Imported document";
 }
 
 function textParagraph(paragraph: string): JSONContent {
@@ -39,9 +31,7 @@ export async function convertFile(
   let content: JSONContent;
 
   if (/\.txt$/i.test(name)) {
-    const text = new TextDecoder("utf-8", { fatal: true })
-      .decode(bytes)
-      .replace(/\r\n?/g, "\n");
+    const text = decodeText(bytes).replace(/\r\n?/g, "\n");
 
     content = {
       type: "doc",
@@ -54,14 +44,17 @@ export async function convertFile(
       try {
         const result = await mammoth.convertToHtml(
           { buffer: Buffer.from(bytes) },
-          { externalFileAccess: false },
+          {
+            externalFileAccess: false,
+            styleMap: ["p[style-name='Title'] => h1:fresh", "u => u"],
+          },
         );
         html = result.value;
       } catch {
         throw new Error("This .docx file is unreadable or corrupt. Try exporting it again.");
       }
     } else {
-      const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      const text = decodeText(bytes);
       html = await marked(text);
     }
 
@@ -79,4 +72,12 @@ export async function convertFile(
 
 function hasText(node: JSONContent): boolean {
   return Boolean(node.text?.trim() || node.content?.some(hasText));
+}
+
+function decodeText(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new Error("This file isn't UTF-8 text. Save it as UTF-8 and try again.");
+  }
 }

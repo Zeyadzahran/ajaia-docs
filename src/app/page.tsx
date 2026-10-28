@@ -1,5 +1,5 @@
-import { ImportButton } from "@/components/ImportButton";
 import Link from "next/link";
+import { ImportButton } from "@/components/ImportButton";
 import { createDocumentAction } from "@/app/actions";
 import { AppHeader } from "@/components/AppHeader";
 import { listDocumentsFor, type DocumentSummary } from "@/lib/documents";
@@ -16,12 +16,12 @@ export default async function HomePage() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Documents</h1>
           <div className="flex items-start gap-2">
-          <ImportButton />
-          <form action={createDocumentAction}>
-            <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              + New document
-            </button>
-          </form>
+            <ImportButton />
+            <form action={createDocumentAction}>
+              <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                + New document
+              </button>
+            </form>
           </div>
         </div>
 
@@ -42,7 +42,15 @@ export default async function HomePage() {
   );
 }
 
-function DocumentList({ title, docs, empty }: { title: string; docs: DocumentSummary[]; empty: string }) {
+function DocumentList({
+  title,
+  docs,
+  empty,
+}: {
+  title: string;
+  docs: DocumentSummary[];
+  empty: string;
+}) {
   return (
     <section className="mt-8">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -56,7 +64,10 @@ function DocumentList({ title, docs, empty }: { title: string; docs: DocumentSum
         <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
           {docs.map((doc) => (
             <li key={doc.id}>
-              <Link href={`/doc/${doc.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
+              <Link
+                href={`/doc/${doc.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
+              >
                 <span className="font-medium">{doc.title}</span>
                 <span className="text-sm text-slate-500">
                   {doc.role === "shared" && <span className="mr-3">Owner: {doc.ownerName}</span>}
