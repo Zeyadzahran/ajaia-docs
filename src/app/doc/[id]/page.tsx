@@ -1,5 +1,7 @@
 import type { JSONContent } from "@tiptap/react";
+import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { DocumentEditor } from "@/components/DocumentEditor";
@@ -15,10 +17,19 @@ const ROLE_BADGE = {
   viewer: { label: "Can view", className: "bg-slate-100 text-slate-700" },
 };
 
-export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
+// cache() lets the page and its metadata share one lookup per request.
+const loadDocument = cache(async (id: string) => {
   const user = await requireUser();
-  const { id } = await params;
-  const doc = await getDocumentFor(id, user.id);
+  return { user, doc: await getDocumentFor(id, user.id) };
+});
+
+export async function generateMetadata({ params }: PageProps<"/doc/[id]">): Promise<Metadata> {
+  const { doc } = await loadDocument((await params).id);
+  return { title: doc ? `${doc.title} · Ajaia Docs` : "Not found · Ajaia Docs" };
+}
+
+export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
+  const { user, doc } = await loadDocument((await params).id);
   if (!doc) notFound();
 
   const isOwner = doc.role === "owner";
@@ -27,7 +38,6 @@ export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
 
   return (
     <>
-      <title>{`${doc.title} · Ajaia Docs`}</title>
       <AppHeader user={user} />
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2">
