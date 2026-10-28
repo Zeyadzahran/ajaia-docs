@@ -9,25 +9,32 @@ datasource db {
 
 // Seeded users (auth is mocked for this review build), see prisma/seed.ts.
 model User {
-  id     String          @id
-  name   String
-  email  String          @unique
-  owned  Document[]
-  shares DocumentShare[]
+  id        String             @id
+  name      String
+  email     String             @unique
+  owned     Document[]
+  shares    DocumentShare[]
+  versions  DocumentVersion[]
+  presences DocumentPresence[]
+  comments  Comment[]          @relation("CommentAuthor")
+  resolved  Comment[]          @relation("CommentResolver")
 
   @@map("users")
 }
 
 model Document {
-  id        String          @id @default(uuid()) @db.Uuid
-  title     String          @default("Untitled document")
+  id        String             @id @default(uuid()) @db.Uuid
+  title     String             @default("Untitled document")
   // TipTap (ProseMirror) JSON, so formatting round-trips exactly
-  content   Json            @default("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]}")
-  ownerId   String          @map("owner_id")
-  owner     User            @relation(fields: [ownerId], references: [id])
+  content   Json               @default("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]}")
+  ownerId   String             @map("owner_id")
+  owner     User               @relation(fields: [ownerId], references: [id])
   shares    DocumentShare[]
-  createdAt DateTime        @default(now()) @map("created_at")
-  updatedAt DateTime        @updatedAt @map("updated_at")
+  versions  DocumentVersion[]
+  presences DocumentPresence[]
+  comments  Comment[]
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
 
   @@index([ownerId])
   @@map("documents")
@@ -52,4 +59,52 @@ enum ShareRole {
   EDITOR
 
   @@map("share_role")
+}
+
+// A saved snapshot of a document (stretch: version history).
+model DocumentVersion {
+  id          String   @id @default(uuid()) @db.Uuid
+  documentId  String   @map("document_id") @db.Uuid
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  title       String
+  content     Json
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([documentId, createdAt])
+  @@map("document_versions")
+}
+
+// Who has a document open right now (stretch: real-time indicators).
+// A row is "live" while lastSeenAt is recent; clients send a heartbeat.
+model DocumentPresence {
+  documentId String   @map("document_id") @db.Uuid
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+  editing    Boolean  @default(false)
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+
+  @@id([documentId, userId])
+  @@map("document_presence")
+}
+
+// A comment on a document (stretch: commenting). `quote` keeps the text that was
+// selected when the comment was written, for context.
+model Comment {
+  id           String    @id @default(uuid()) @db.Uuid
+  documentId   String    @map("document_id") @db.Uuid
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  authorId     String    @map("author_id")
+  author       User      @relation("CommentAuthor", fields: [authorId], references: [id])
+  body         String
+  quote        String?
+  resolvedAt   DateTime? @map("resolved_at")
+  resolvedById String?   @map("resolved_by_id")
+  resolvedBy   User?     @relation("CommentResolver", fields: [resolvedById], references: [id])
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([documentId, createdAt])
+  @@map("comments")
 }
