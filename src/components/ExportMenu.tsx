@@ -2,9 +2,10 @@
 
 import type { Editor } from "@tiptap/react";
 import { useEffect, useRef, useState } from "react";
-import { CaretDownIcon, DownloadSimpleIcon, FileTextIcon, PrinterIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, DownloadSimpleIcon, FilePdfIcon, FileTextIcon } from "@phosphor-icons/react";
 import { button } from "@/components/ui";
 import { exportMarkdown } from "@/lib/export-markdown";
+import { toPdfDefinition } from "@/lib/export-pdf";
 
 export function ExportMenu({ editor }: { editor: Editor | null }) {
   const menu = useRef<HTMLDetailsElement>(null);
@@ -40,21 +41,27 @@ export function ExportMenu({ editor }: { editor: Editor | null }) {
     close();
     if (!editor) return;
 
-    const title = document.title.replace(/ · Ajaia Docs$/, "").trim() || "Document";
     const blob = new Blob([exportMarkdown(editor.getJSON())], {
       type: "text/markdown;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${title.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")}.md`;
+    link.download = `${fileName()}.md`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function print() {
+  // pdfmake is loaded only when someone exports, so it doesn't slow down the editor.
+  async function downloadPdf() {
     close();
-    window.print();
+    if (!editor) return;
+    const [{ default: pdfMake }, { default: vfs }] = await Promise.all([
+      import("pdfmake/build/pdfmake"),
+      import("pdfmake/build/vfs_fonts"),
+    ]);
+    pdfMake.addVirtualFileSystem(vfs);
+    await pdfMake.createPdf(toPdfDefinition(editor.getJSON(), docTitle())).download(`${fileName()}.pdf`);
   }
 
   return (
@@ -81,13 +88,22 @@ export function ExportMenu({ editor }: { editor: Editor | null }) {
         </button>
         <button
           type="button"
-          onClick={print}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-ink-100"
+          disabled={!editor}
+          onClick={downloadPdf}
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-ink-100 disabled:opacity-50"
         >
-          <PrinterIcon size={16} className="text-ink-500" />
-          Print or save as PDF
+          <FilePdfIcon size={16} className="text-ink-500" />
+          PDF (.pdf)
         </button>
       </div>
     </details>
   );
+}
+
+function docTitle() {
+  return document.title.replace(/ · Ajaia Docs$/, "").trim() || "Document";
+}
+
+function fileName() {
+  return docTitle().replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_");
 }
