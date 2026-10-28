@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { CommentsPanel } from "@/components/CommentsPanel";
 import { DocumentEditor } from "@/components/DocumentEditor";
 import { ShareDialog } from "@/components/ShareDialog";
 import { TitleInput } from "@/components/TitleInput";
@@ -58,11 +59,16 @@ export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
           {isOwner && <ShareDialog documentId={doc.id} ownerName={user.name} initialShares={shares} />}
         </div>
       </div>
-      <DocumentEditor
-        documentId={doc.id}
-        initialContent={doc.content as JSONContent}
-        readOnly={doc.role === "viewer"}
-      />
+      <div className="grid flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] print:block">
+        <div className="min-w-0">
+          <DocumentEditor
+            documentId={doc.id}
+            initialContent={doc.content as JSONContent}
+            readOnly={doc.role === "viewer"}
+          />
+        </div>
+        <CommentsPanel documentId={doc.id} />
+      </div>
     </>
   );
 }
