@@ -1,10 +1,10 @@
 "use client";
 
 import { EditorContent, useEditor, useEditorState, type Editor, type JSONContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extensions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { saveContent } from "@/app/doc/[id]/actions";
+import { editorExtensions } from "@/lib/editor-schema";
 
 type SaveState = "saved" | "unsaved" | "saving" | "error";
 
@@ -13,6 +13,7 @@ const SAVE_DELAY_MS = 800;
 export function DocumentEditor({ documentId, initialContent }: { documentId: string; initialContent: JSONContent }) {
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Saves run one after another so an older save can never land after a newer one.
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -20,6 +21,7 @@ export function DocumentEditor({ documentId, initialContent }: { documentId: str
   const save = useCallback(
     (editor: Editor) => {
       clearTimeout(timer.current);
+      timer.current = undefined;
       queue.current = queue.current.then(async () => {
         setSaveState("saving");
         try {
@@ -42,12 +44,18 @@ export function DocumentEditor({ documentId, initialContent }: { documentId: str
   );
 
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: { openOnClick: false } }),
-      Placeholder.configure({ placeholder: "Start writing…" }),
-    ],
+    extensions: [...editorExtensions, Placeholder.configure({ placeholder: "Start writing…" })],
     content: initialContent,
     immediatelyRender: false,
+    // If stored content ever fails to load, lock the editor instead of letting an
+    // autosave replace the document with the empty fallback.
+    enableContentCheck: true,
+    onContentError: ({ editor }) => {
+      editor.setEditable(false);
+      setLocked(true);
+      setError("This document couldn't be loaded, so editing is disabled to protect it.");
+      setSaveState("error");
+    },
     editorProps: { attributes: { class: "doc-content", "aria-label": "Document body" } },
     onUpdate: ({ editor }) => {
       setSaveState("unsaved");
@@ -77,7 +85,7 @@ export function DocumentEditor({ documentId, initialContent }: { documentId: str
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-2">
           {/* Mount the toolbar only once the editor exists: useEditorState won't notice it arriving later. */}
           {editor ? <Toolbar editor={editor} /> : <div className="h-9" />}
-          <SaveStatus state={saveState} error={error} onRetry={() => editor && save(editor)} />
+          <SaveStatus state={saveState} error={error} onRetry={locked || !editor ? undefined : () => save(editor)} />
         </div>
       </div>
       <div className="flex-1 px-4 py-8">
@@ -184,14 +192,16 @@ function Divider() {
   return <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />;
 }
 
-function SaveStatus({ state, error, onRetry }: { state: SaveState; error: string | null; onRetry: () => void }) {
+function SaveStatus({ state, error, onRetry }: { state: SaveState; error: string | null; onRetry?: () => void }) {
   if (state === "error") {
     return (
       <div role="alert" className="flex items-center gap-2 text-sm text-red-700">
         <span>{error ?? "Couldn't save."}</span>
-        <button type="button" onClick={onRetry} className="rounded-md border border-red-300 px-2 py-0.5 hover:bg-red-50">
-          Retry
-        </button>
+        {onRetry && (
+          <button type="button" onClick={onRetry} className="rounded-md border border-red-300 px-2 py-0.5 hover:bg-red-50">
+            Retry
+          </button>
+        )}
       </div>
     );
   }

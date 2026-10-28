@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { renameDocument } from "@/app/doc/[id]/actions";
 import { MAX_TITLE_LENGTH } from "@/lib/validation";
 
@@ -9,24 +9,32 @@ export function TitleInput({ documentId, initialTitle }: { documentId: string; i
   const [title, setTitle] = useState(initialTitle);
   const [savedTitle, setSavedTitle] = useState(initialTitle);
   const [error, setError] = useState<string | null>(null);
+  // Only the reply to the latest rename may update the field.
+  const latestRequest = useRef(0);
 
   async function commit() {
     if (title === savedTitle) return;
+    const submitted = title;
+    const request = ++latestRequest.current;
+
+    let result: Awaited<ReturnType<typeof renameDocument>>;
     try {
-      const result = await renameDocument(documentId, title);
-      if (!result.ok) {
-        setError(result.error);
-        setTitle(savedTitle);
-        return;
-      }
+      result = await renameDocument(documentId, submitted);
+    } catch {
+      result = { ok: false, error: "Couldn't reach the server. Check your connection." };
+    }
+    if (request !== latestRequest.current) return;
+
+    if (result.ok) {
       setSavedTitle(result.title);
-      setTitle(result.title);
       setError(null);
       document.title = `${result.title} · Ajaia Docs`;
-    } catch {
-      setError("Couldn't reach the server. Check your connection.");
-      setTitle(savedTitle);
+    } else {
+      setError(result.error);
     }
+    // Leave the field alone if the user kept typing while the request was in flight.
+    const replacement = result.ok ? result.title : savedTitle;
+    setTitle((current) => (current === submitted ? replacement : current));
   }
 
   return (
