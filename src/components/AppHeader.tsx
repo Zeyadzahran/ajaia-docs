@@ -1,20 +1,29 @@
+import { SignOutIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { signOut } from "@/app/actions";
+import { Logo } from "@/components/Logo";
+import { button } from "@/components/ui";
 import type { User } from "@/lib/session";
 
-export function AppHeader({ user }: { user: User }) {
+// `wide` lines the header up with full-width pages such as the editor.
+export function AppHeader({ user, wide = false }: { user: User; wide?: boolean }) {
   return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="grid h-7 w-7 place-items-center rounded-md bg-blue-600 text-sm text-white">A</span>
-          Ajaia Docs
+    <header className="border-b border-ink-200 bg-white">
+      <div className={`flex h-14 items-center justify-between px-4 sm:px-6 ${wide ? "" : "mx-auto max-w-6xl"}`}>
+        <Link href="/" aria-label="All documents" className="rounded-lg">
+          <Logo />
         </Link>
-        <form action={signOut} className="flex items-center gap-3 text-sm">
-          <span className="text-slate-600">
-            Signed in as <span className="font-medium text-slate-900">{user.name}</span>
+        <form action={signOut} className="flex items-center gap-3">
+          <span className="flex items-center gap-2 text-sm">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700">
+              {user.name[0]}
+            </span>
+            <span className="hidden font-medium text-ink-900 sm:inline">{user.name}</span>
           </span>
-          <button className="rounded-md border border-slate-300 px-2.5 py-1 hover:bg-slate-50">Switch user</button>
+          <button className={button("ghost", "sm")}>
+            <SignOutIcon size={16} />
+            Switch user
+          </button>
         </form>
       </div>
     </header>

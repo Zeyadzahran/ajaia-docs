@@ -1,5 +1,6 @@
 import type { JSONContent } from "@tiptap/react";
 import type { Metadata } from "next";
+import { ArrowLeftIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { cache } from "react";
 import { notFound } from "next/navigation";
@@ -10,14 +11,15 @@ import { HistoryButton } from "@/components/HistoryButton";
 import { PresenceBar } from "@/components/PresenceBar";
 import { ShareDialog } from "@/components/ShareDialog";
 import { TitleInput } from "@/components/TitleInput";
+import { button } from "@/components/ui";
 import { getDocumentFor } from "@/lib/documents";
 import { requireUser } from "@/lib/session";
 import { listShares } from "@/lib/sharing";
 
 const ROLE_BADGE = {
-  owner: { label: "Owner", className: "bg-blue-50 text-blue-700" },
-  editor: { label: "Can edit", className: "bg-amber-50 text-amber-800" },
-  viewer: { label: "Can view", className: "bg-slate-100 text-slate-700" },
+  owner: { label: "Owner", className: "bg-brand-50 text-brand-700 ring-1 ring-brand-100" },
+  editor: { label: "Can edit", className: "bg-brand-50 text-brand-700 ring-1 ring-brand-100" },
+  viewer: { label: "Can view", className: "bg-ink-100 text-ink-700 ring-1 ring-ink-200" },
 };
 
 // cache() lets the page and its metadata share one lookup per request.
@@ -41,23 +43,19 @@ export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
 
   return (
     <>
-      <AppHeader user={user} />
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2">
-          <Link
-            href="/"
-            className="shrink-0 rounded-md px-2 py-1 text-sm text-slate-600 hover:bg-slate-100"
-            aria-label="Back to all documents"
-          >
-            ← Documents
+      <AppHeader user={user} wide />
+      <div className="bg-white">
+        <div className="flex flex-wrap items-center gap-2 px-4 pt-3 pb-1 sm:flex-nowrap sm:px-6">
+          <Link href="/" className={button("ghost", "icon")} aria-label="Back to all documents" title="All documents">
+            <ArrowLeftIcon size={18} />
           </Link>
           {doc.role === "viewer" ? (
-            <h1 className="min-w-0 flex-1 truncate px-2 py-1 text-lg font-semibold">{doc.title}</h1>
+            <h1 className="min-w-[10rem] flex-1 truncate px-2 py-1 text-lg font-semibold tracking-tight">{doc.title}</h1>
           ) : (
             <TitleInput documentId={doc.id} initialTitle={doc.title} />
           )}
           <PresenceBar documentId={doc.id} />
-          {!isOwner && <span className="hidden shrink-0 text-sm text-slate-500 sm:inline">Shared by {doc.owner.name}</span>}
+          {!isOwner && <span className="hidden shrink-0 text-sm text-ink-500 sm:inline">Shared by {doc.owner.name}</span>}
           <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}>{badge.label}</span>
           <HistoryButton documentId={doc.id} canRestore={doc.role !== "viewer"} />
           {isOwner && <ShareDialog documentId={doc.id} ownerName={user.name} initialShares={shares} />}

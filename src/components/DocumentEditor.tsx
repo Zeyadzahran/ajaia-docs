@@ -1,6 +1,20 @@
 "use client";
 
 import { EditorContent, useEditor, useEditorState, type Editor, type JSONContent } from "@tiptap/react";
+import {
+  ArrowClockwiseIcon,
+  ArrowCounterClockwiseIcon,
+  CheckIcon,
+  EyeIcon,
+  ListBulletsIcon,
+  ListNumbersIcon,
+  TextBIcon,
+  TextHOneIcon,
+  TextHThreeIcon,
+  TextHTwoIcon,
+  TextItalicIcon,
+  TextUnderlineIcon,
+} from "@phosphor-icons/react";
 import { Placeholder } from "@tiptap/extensions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { saveContent } from "@/app/doc/[id]/actions";
@@ -91,10 +105,13 @@ export function DocumentEditor({
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-2">
+      <div className="sticky top-0 z-10 border-b border-ink-200 bg-ink-0">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-6">
           {readOnly ? (
-            <p className="flex h-9 items-center text-sm text-slate-600">View only. Ask the owner for edit access.</p>
+            <p className="mr-auto flex h-9 items-center gap-2 text-sm text-ink-600">
+              <EyeIcon size={16} />
+              View only. Ask the owner for edit access.
+            </p>
           ) : (
             <>
               {/* Mount the toolbar only once the editor exists: useEditorState won't notice it arriving later. */}
@@ -105,8 +122,8 @@ export function DocumentEditor({
           <ExportMenu editor={editor} />
         </div>
       </div>
-      <div className="flex-1 px-4 py-8">
-        <div className="mx-auto max-w-3xl rounded-lg border border-slate-200 bg-white px-6 py-10 shadow-sm sm:px-14">
+      <div className="flex-1 px-4 py-10 sm:px-6">
+        <div className="mx-auto max-w-[816px] rounded-sm bg-white px-6 py-12 shadow-[0_1px_2px_rgba(24,24,27,0.05),0_16px_40px_-20px_rgba(24,24,27,0.18)] ring-1 ring-ink-200/70 sm:px-16 sm:py-16">
           <EditorContent editor={editor} />
         </div>
       </div>
@@ -134,15 +151,15 @@ function Toolbar({ editor }: { editor: Editor }) {
   const chain = () => editor.chain().focus();
 
   return (
-    <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-1">
+    <div role="toolbar" aria-label="Formatting" className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg bg-ink-50 p-0.5 ring-1 ring-ink-200 [scrollbar-width:none]">
       <ToolButton label="Bold (Ctrl+B)" active={state.bold} onClick={() => chain().toggleBold().run()}>
-        <span className="font-bold">B</span>
+        <TextBIcon size={18} weight="bold" />
       </ToolButton>
       <ToolButton label="Italic (Ctrl+I)" active={state.italic} onClick={() => chain().toggleItalic().run()}>
-        <span className="font-serif italic">I</span>
+        <TextItalicIcon size={18} />
       </ToolButton>
       <ToolButton label="Underline (Ctrl+U)" active={state.underline} onClick={() => chain().toggleUnderline().run()}>
-        <span className="underline">U</span>
+        <TextUnderlineIcon size={18} />
       </ToolButton>
       <Divider />
       {([1, 2, 3] as const).map((level) => (
@@ -152,22 +169,22 @@ function Toolbar({ editor }: { editor: Editor }) {
           active={state[`h${level}`]}
           onClick={() => chain().toggleHeading({ level }).run()}
         >
-          H{level}
+          {[<TextHOneIcon key={1} size={18} />, <TextHTwoIcon key={2} size={18} />, <TextHThreeIcon key={3} size={18} />][level - 1]}
         </ToolButton>
       ))}
       <Divider />
       <ToolButton label="Bulleted list" active={state.bulletList} onClick={() => chain().toggleBulletList().run()}>
-        <ListIcon />
+        <ListBulletsIcon size={18} />
       </ToolButton>
       <ToolButton label="Numbered list" active={state.orderedList} onClick={() => chain().toggleOrderedList().run()}>
-        <NumberedListIcon />
+        <ListNumbersIcon size={18} />
       </ToolButton>
       <Divider />
       <ToolButton label="Undo (Ctrl+Z)" disabled={!state.canUndo} onClick={() => chain().undo().run()}>
-        ↶
+        <ArrowCounterClockwiseIcon size={18} />
       </ToolButton>
       <ToolButton label="Redo (Ctrl+Shift+Z)" disabled={!state.canRedo} onClick={() => chain().redo().run()}>
-        ↷
+        <ArrowClockwiseIcon size={18} />
       </ToolButton>
     </div>
   );
@@ -196,8 +213,8 @@ function ToolButton({
       // Keep focus (and the cursor position) in the editor when a button is pressed.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className={`grid h-9 min-w-9 place-items-center rounded-md px-2 text-sm transition-colors disabled:opacity-30 ${
-        active ? "bg-blue-100 text-blue-700" : "text-slate-700 hover:bg-slate-100"
+      className={`grid h-8 min-w-8 shrink-0 place-items-center rounded-md px-2 text-sm transition-colors disabled:opacity-30 ${
+        active ? "bg-ink-0 text-brand-700 shadow-sm ring-1 ring-ink-200" : "text-ink-700 hover:bg-ink-0"
       }`}
     >
       {children}
@@ -206,13 +223,13 @@ function ToolButton({
 }
 
 function Divider() {
-  return <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />;
+  return <span className="mx-1 h-5 w-px bg-ink-200" aria-hidden />;
 }
 
 function SaveStatus({ state, error, onRetry }: { state: SaveState; error: string | null; onRetry?: () => void }) {
   if (state === "error") {
     return (
-      <div role="alert" className="flex items-center gap-2 text-sm text-red-700">
+      <div role="alert" className="ml-auto flex items-center gap-2 text-sm text-red-700">
         <span>{error ?? "Couldn't save."}</span>
         {onRetry && (
           <button type="button" onClick={onRetry} className="rounded-md border border-red-300 px-2 py-0.5 hover:bg-red-50">
@@ -222,32 +239,11 @@ function SaveStatus({ state, error, onRetry }: { state: SaveState; error: string
       </div>
     );
   }
-  const text = { saved: "All changes saved", unsaved: "Unsaved changes", saving: "Saving…" }[state];
+  const text = { saved: "Saved", unsaved: "Unsaved changes", saving: "Saving…" }[state];
   return (
-    <span aria-live="polite" className="shrink-0 text-sm text-slate-500">
+    <span aria-live="polite" className="ml-auto flex shrink-0 items-center gap-1 text-sm text-ink-500">
+      {state === "saved" && <CheckIcon size={14} weight="bold" className="text-brand-600" />}
       {text}
     </span>
-  );
-}
-
-function ListIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <circle cx="4" cy="6" r="1" fill="currentColor" />
-      <circle cx="4" cy="12" r="1" fill="currentColor" />
-      <circle cx="4" cy="18" r="1" fill="currentColor" />
-      <path d="M9 6h12M9 12h12M9 18h12" />
-    </svg>
-  );
-}
-
-function NumberedListIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M10 6h11M10 12h11M10 18h11" />
-      <text x="1" y="8" fontSize="7" fill="currentColor" stroke="none">1</text>
-      <text x="1" y="14" fontSize="7" fill="currentColor" stroke="none">2</text>
-      <text x="1" y="20" fontSize="7" fill="currentColor" stroke="none">3</text>
-    </svg>
   );
 }

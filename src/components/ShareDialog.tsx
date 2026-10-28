@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { UserPlusIcon, XIcon } from "@phosphor-icons/react";
 import { removeShareAction, shareAction } from "@/app/doc/[id]/actions";
+import { button, input } from "@/components/ui";
 import type { Share } from "@/lib/sharing";
 
 const DEMO_EMAILS = ["alice@example.com", "bob@example.com", "carol@example.com"];
@@ -43,17 +45,18 @@ export function ShareDialog({
       <button
         type="button"
         onClick={() => dialog.current?.showModal()}
-        className="flex shrink-0 items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+        className={button("primary")}
       >
+        <UserPlusIcon size={16} weight="bold" />
         Share
-        {shares.length > 0 && <span className="rounded-full bg-white/25 px-1.5 text-xs">{shares.length}</span>}
+        {shares.length > 0 && <span className="rounded-full bg-white/20 px-1.5 text-xs tabular-nums">{shares.length}</span>}
       </button>
 
       <dialog
         ref={dialog}
         aria-labelledby="share-title"
         onClose={() => setNotice(null)}
-        className="m-auto w-full max-w-md rounded-xl p-0 shadow-xl backdrop:bg-slate-900/40"
+        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl p-0 shadow-2xl ring-1 ring-ink-200 backdrop:bg-ink-900/30 backdrop:backdrop-blur-[2px]"
       >
         <div className="p-6">
           <div className="flex items-start justify-between">
@@ -64,9 +67,9 @@ export function ShareDialog({
               type="button"
               onClick={() => dialog.current?.close()}
               aria-label="Close"
-              className="-mr-2 -mt-1 rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100"
+              className={`${button("ghost", "icon")} -mr-2 -mt-1`}
             >
-              ✕
+              <XIcon size={18} />
             </button>
           </div>
 
@@ -85,7 +88,7 @@ export function ShareDialog({
               placeholder="Email address"
               list="demo-emails"
               aria-label="Email address"
-              className="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className={`${input} min-w-0 flex-1`}
             />
             <datalist id="demo-emails">
               {DEMO_EMAILS.map((e) => (
@@ -95,12 +98,12 @@ export function ShareDialog({
             <RoleSelect value={role} onChange={setRole} label="Role for new person" />
             <button
               disabled={pending}
-              className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className={button("primary")}
             >
               {pending ? "…" : "Share"}
             </button>
           </form>
-          <p className="mt-2 text-xs text-slate-500">Demo accounts: {DEMO_EMAILS.join(", ")}</p>
+          <p className="mt-2 text-xs text-ink-500">Demo accounts: {DEMO_EMAILS.join(", ")}</p>
 
           {notice && (
             <p
@@ -113,17 +116,17 @@ export function ShareDialog({
             </p>
           )}
 
-          <h3 className="mt-6 text-sm font-semibold text-slate-700">People with access</h3>
-          <ul className="mt-2 divide-y divide-slate-100">
+          <h3 className="mt-6 text-sm font-medium text-ink-900">People with access</h3>
+          <ul className="mt-2 divide-y divide-ink-100">
             <li className="flex items-center justify-between py-2 text-sm">
               <span className="font-medium">{ownerName} (you)</span>
-              <span className="text-slate-500">Owner</span>
+              <span className="text-ink-500">Owner</span>
             </li>
             {shares.map((s) => (
               <li key={s.userId} className="flex items-center justify-between gap-2 py-2 text-sm">
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{s.name}</span>
-                  <span className="block truncate text-slate-500">{s.email}</span>
+                  <span className="block truncate text-ink-500">{s.email}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-1">
                   <RoleSelect
@@ -136,7 +139,7 @@ export function ShareDialog({
                     type="button"
                     disabled={pending}
                     onClick={() => run(() => removeShareAction(documentId, s.userId))}
-                    className="rounded-md px-2 py-1 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                    className={button("danger", "sm")}
                   >
                     Remove
                   </button>
@@ -144,7 +147,7 @@ export function ShareDialog({
               </li>
             ))}
           </ul>
-          {shares.length === 0 && <p className="mt-1 text-sm text-slate-500">Only you can open this document.</p>}
+          {shares.length === 0 && <p className="mt-1 text-sm text-ink-500">Only you can open this document.</p>}
         </div>
       </dialog>
     </>
@@ -168,7 +171,7 @@ function RoleSelect({
       disabled={disabled}
       aria-label={label}
       onChange={(e) => onChange(e.target.value as Share["role"])}
-      className="rounded-md border border-slate-300 bg-white px-2 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:opacity-50"
+      className={`${input} pr-7 disabled:opacity-50`}
     >
       <option value="EDITOR">Can edit</option>
       <option value="VIEWER">Can view</option>

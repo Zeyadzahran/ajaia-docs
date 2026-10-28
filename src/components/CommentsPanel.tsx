@@ -1,5 +1,7 @@
 "use client";
 
+import { ChatCircleIcon, CheckCircleIcon, XIcon } from "@phosphor-icons/react";
+import { button } from "@/components/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   addCommentAction,
@@ -93,17 +95,22 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
   return (
     <aside
       aria-label="Document comments"
-      className="border-t border-slate-200 bg-white p-4 lg:border-l lg:border-t-0 print:hidden"
+      className="border-t border-ink-200 bg-white p-5 lg:border-l lg:border-t-0 print:hidden"
     >
-      <h2 className="text-lg font-semibold">Comments ({openCount})</h2>
-      <label className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+        <ChatCircleIcon size={18} className="text-ink-500" />
+        Comments
+        <span className="font-normal text-ink-400 tabular-nums">{openCount}</span>
+      </h2>
+      <label className="mt-2 flex items-center gap-2 text-sm text-ink-600">
         <input
           type="checkbox"
+          className="accent-brand-600"
           checked={showResolved}
           onChange={(event) => setShowResolved(event.target.checked)}
         />
         Show resolved
-        {resolvedCount > 0 && <span className="text-xs text-slate-500">+{resolvedCount} resolved</span>}
+        {resolvedCount > 0 && <span className="text-xs text-ink-500">+{resolvedCount} resolved</span>}
       </label>
 
       <form
@@ -121,7 +128,7 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
         }}
       >
         {quote && (
-          <div className="mb-2 flex items-start gap-2 rounded-md bg-slate-100 p-2 text-sm">
+          <div className="mb-2 flex items-start gap-2 rounded-lg bg-brand-50 p-2 text-sm text-ink-700 ring-1 ring-brand-100">
             <blockquote className="min-w-0 flex-1 whitespace-pre-wrap break-words">
               {quote}
             </blockquote>
@@ -130,9 +137,9 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
               aria-label="Remove quote"
               onClick={() => setQuote("")}
               disabled={pending !== null}
-              className="px-1 text-slate-500 hover:text-slate-900"
+              className={button("ghost", "icon")}
             >
-              ✕
+              <XIcon size={14} />
             </button>
           </div>
         )}
@@ -149,14 +156,14 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
           rows={3}
           disabled={pending !== null}
           placeholder="Share feedback on this document…"
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:opacity-50"
+          className="mt-1.5 w-full resize-y rounded-lg bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-ink-200 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
         />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-ink-500">
           Select document text first to include a quote.
         </p>
         <button
           disabled={loading || pending !== null || !body.trim()}
-          className="mt-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className={`${button("primary", "sm")} mt-2`}
         >
           {pending === "add" ? "Posting…" : "Comment"}
         </button>
@@ -176,11 +183,11 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
         </div>
       )}
       {loading ? (
-        <p role="status" className="mt-4 text-sm text-slate-500">
+        <p role="status" className="mt-4 text-sm text-ink-500">
           Loading comments…
         </p>
       ) : visible.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">
+        <p className="mt-4 text-sm text-ink-500">
           {comments.length
             ? "No open comments. Show resolved to see earlier feedback."
             : "No comments yet. Start the conversation."}
@@ -188,29 +195,37 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
       ) : (
         <ul className="mt-4 space-y-3" aria-live="polite">
           {visible.map((comment) => (
-            <li key={comment.id} className="rounded-lg border border-slate-200 p-3">
+            <li key={comment.id} className="rounded-xl bg-white p-3 ring-1 ring-ink-200">
               <div className="flex flex-wrap items-center justify-between gap-1 text-xs">
-                <span className="font-semibold text-slate-800">{comment.author}</span>
+                <span className="flex items-center gap-2 font-semibold text-ink-800">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-50 text-[11px] font-semibold text-brand-700">
+                    {comment.author[0]}
+                  </span>
+                  {comment.author}
+                </span>
                 <time
                   dateTime={comment.createdAt}
                   title={new Date(comment.createdAt).toLocaleString()}
-                  className="text-slate-500"
+                  className="text-ink-500"
                 >
                   {relativeTime(comment.createdAt)}
                 </time>
               </div>
               {comment.resolvedAt && (
-                <p className="mt-1 text-xs font-medium text-green-700">Resolved</p>
+                <p className="mt-2 flex items-center gap-1 text-xs font-medium text-brand-700">
+                  <CheckCircleIcon size={14} weight="fill" />
+                  Resolved
+                </p>
               )}
               {comment.quote && (
-                <blockquote className="mt-2 whitespace-pre-wrap break-words border-l-2 border-slate-300 pl-2 text-xs text-slate-500">
+                <blockquote className="mt-2 whitespace-pre-wrap break-words border-l-2 border-ink-300 pl-2 text-xs text-ink-500">
                   {comment.quote}
                 </blockquote>
               )}
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm text-ink-700">
                 {comment.body}
               </p>
-              <div className="mt-2 flex gap-3 text-xs">
+              <div className="mt-2 -ml-2 flex gap-1">
                 {comment.canResolve && (
                   <button
                     type="button"
@@ -224,7 +239,7 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
                         }),
                       )
                     }
-                    className="text-blue-700 hover:underline disabled:opacity-50"
+                    className={button("ghost", "sm")}
                   >
                     {pending === comment.id
                       ? "Updating…"
@@ -243,7 +258,7 @@ export function CommentsPanel({ documentId }: { documentId: string }) {
                         deleteCommentAction({ documentId, commentId: comment.id }),
                       );
                     }}
-                    className="text-red-700 hover:underline disabled:opacity-50"
+                    className={button("danger", "sm")}
                   >
                     Delete
                   </button>
