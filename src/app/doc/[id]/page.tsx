@@ -3,15 +3,27 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { DocumentEditor } from "@/components/DocumentEditor";
+import { ShareDialog } from "@/components/ShareDialog";
 import { TitleInput } from "@/components/TitleInput";
 import { getDocumentFor } from "@/lib/documents";
 import { requireUser } from "@/lib/session";
+import { listShares } from "@/lib/sharing";
+
+const ROLE_BADGE = {
+  owner: { label: "Owner", className: "bg-blue-50 text-blue-700" },
+  editor: { label: "Can edit", className: "bg-amber-50 text-amber-800" },
+  viewer: { label: "Can view", className: "bg-slate-100 text-slate-700" },
+};
 
 export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
   const user = await requireUser();
   const { id } = await params;
   const doc = await getDocumentFor(id, user.id);
   if (!doc) notFound();
+
+  const isOwner = doc.role === "owner";
+  const shares = isOwner ? ((await listShares(doc.id, user.id)) ?? []) : [];
+  const badge = ROLE_BADGE[doc.role];
 
   return (
     <>
@@ -26,17 +38,21 @@ export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
           >
             ← Documents
           </Link>
-          <TitleInput documentId={doc.id} initialTitle={doc.title} />
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              doc.role === "owner" ? "bg-blue-50 text-blue-700" : "bg-amber-50 text-amber-800"
-            }`}
-          >
-            {doc.role === "owner" ? "Owner" : `Shared by ${doc.owner.name}`}
-          </span>
+          {doc.role === "viewer" ? (
+            <h1 className="min-w-0 flex-1 truncate px-2 py-1 text-lg font-semibold">{doc.title}</h1>
+          ) : (
+            <TitleInput documentId={doc.id} initialTitle={doc.title} />
+          )}
+          {!isOwner && <span className="hidden shrink-0 text-sm text-slate-500 sm:inline">Shared by {doc.owner.name}</span>}
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}>{badge.label}</span>
+          {isOwner && <ShareDialog documentId={doc.id} ownerName={user.name} initialShares={shares} />}
         </div>
       </div>
-      <DocumentEditor documentId={doc.id} initialContent={doc.content as JSONContent} />
+      <DocumentEditor
+        documentId={doc.id}
+        initialContent={doc.content as JSONContent}
+        readOnly={doc.role === "viewer"}
+      />
     </>
   );
 }

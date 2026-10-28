@@ -3,12 +3,13 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { updateDocument } from "@/lib/documents";
 import { getCurrentUser } from "@/lib/session";
+import { removeShare, shareDocument } from "@/lib/sharing";
 import { contentSchema, titleSchema } from "@/lib/validation";
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const SIGNED_OUT = "Your session has ended. Sign in again to keep editing.";
-const NO_ACCESS = "This document no longer exists or you no longer have access to it.";
+const NO_ACCESS = "This document no longer exists or you can't edit it.";
 
 // Content arrives as a JSON string: passing the editor's object straight through
 // React's server-action serialization broke Prisma when it inspected the value.
@@ -32,6 +33,18 @@ export async function renameDocument(id: string, title: unknown): Promise<Result
 
   const saved = await updateDocument(id, user.id, { title: parsed.data });
   return saved ? { ok: true, title: parsed.data } : { ok: false, error: NO_ACCESS };
+}
+
+export async function shareAction(id: string, input: { email: string; role: string }) {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false as const, error: SIGNED_OUT };
+  return shareDocument(id, user.id, input);
+}
+
+export async function removeShareAction(id: string, userId: string) {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false as const, error: SIGNED_OUT };
+  return removeShare(id, user.id, userId);
 }
 
 function parseJson(json: unknown) {

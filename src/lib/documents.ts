@@ -1,10 +1,10 @@
 // All document queries go through here. Every read/write is scoped to the
-// current user, so the access rule lives in one place: canAccess().
+// current user, so the access rules live in one place: canView() and canEdit().
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "./db";
 
-export type Role = "owner" | "shared";
+export type Role = "owner" | "editor" | "viewer";
 
 export type DocumentSummary = {
   id: string;
@@ -12,19 +12,37 @@ export type DocumentSummary = {
   updatedAt: Date;
   ownerName: string;
   role: Role;
+  shareCount: number;
 };
 
-const documentId = z.uuid();
+export const documentId = z.uuid();
 
-// A user can open a document if they own it or it was shared with them.
-function canAccess(userId: string) {
+// Owner, or anyone the document was shared with.
+export function canView(userId: string) {
   return { OR: [{ ownerId: userId }, { shares: { some: { userId } } }] };
+}
+
+// Owner, or shared with the EDITOR role.
+export function canEdit(userId: string) {
+  return { OR: [{ ownerId: userId }, { shares: { some: { userId, role: "EDITOR" as const } } }] };
+}
+
+function roleOf(ownerId: string, shares: { userId: string; role: string }[], userId: string): Role {
+  if (ownerId === userId) return "owner";
+  return shares.find((s) => s.userId === userId)?.role === "EDITOR" ? "editor" : "viewer";
 }
 
 export async function listDocumentsFor(userId: string) {
   const docs = await prisma.document.findMany({
-    where: canAccess(userId),
-    select: { id: true, title: true, updatedAt: true, ownerId: true, owner: { select: { name: true } } },
+    where: canView(userId),
+    select: {
+      id: true,
+      title: true,
+      updatedAt: true,
+      ownerId: true,
+      owner: { select: { name: true } },
+      shares: { select: { userId: true, role: true } },
+    },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -33,33 +51,35 @@ export async function listDocumentsFor(userId: string) {
     title: d.title,
     updatedAt: d.updatedAt,
     ownerName: d.owner.name,
-    role: d.ownerId === userId ? "owner" : "shared",
+    role: roleOf(d.ownerId, d.shares, userId),
+    shareCount: d.shares.length,
   }));
 
   return {
     owned: summaries.filter((d) => d.role === "owner"),
-    shared: summaries.filter((d) => d.role === "shared"),
+    shared: summaries.filter((d) => d.role !== "owner"),
   };
 }
 
 export async function getDocumentFor(id: string, userId: string) {
   if (!documentId.safeParse(id).success) return null;
   const doc = await prisma.document.findFirst({
-    where: { id, ...canAccess(userId) },
-    include: { owner: { select: { name: true } } },
+    where: { id, ...canView(userId) },
+    include: { owner: { select: { name: true } }, shares: { select: { userId: true, role: true } } },
   });
   if (!doc) return null;
-  return { ...doc, role: (doc.ownerId === userId ? "owner" : "shared") as Role };
+  const { shares, ...rest } = doc;
+  return { ...rest, role: roleOf(doc.ownerId, shares, userId) };
 }
 
-// Returns false when the document doesn't exist or the user can't access it.
+// Returns false when the document doesn't exist or the user can't edit it.
 export async function updateDocument(
   id: string,
   userId: string,
   data: { title?: string; content?: Prisma.InputJsonValue },
 ) {
   if (!documentId.safeParse(id).success) return false;
-  const { count } = await prisma.document.updateMany({ where: { id, ...canAccess(userId) }, data });
+  const { count } = await prisma.document.updateMany({ where: { id, ...canEdit(userId) }, data });
   return count === 1;
 }
 
