@@ -5,6 +5,8 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { DocumentEditor } from "@/components/DocumentEditor";
+import { HistoryButton } from "@/components/HistoryButton";
+import { PresenceBar } from "@/components/PresenceBar";
 import { ShareDialog } from "@/components/ShareDialog";
 import { TitleInput } from "@/components/TitleInput";
 import { getDocumentFor } from "@/lib/documents";
@@ -53,8 +55,10 @@ export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
           ) : (
             <TitleInput documentId={doc.id} initialTitle={doc.title} />
           )}
+          <PresenceBar documentId={doc.id} />
           {!isOwner && <span className="hidden shrink-0 text-sm text-slate-500 sm:inline">Shared by {doc.owner.name}</span>}
           <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}>{badge.label}</span>
+          <HistoryButton documentId={doc.id} canRestore={doc.role !== "viewer"} />
           {isOwner && <ShareDialog documentId={doc.id} ownerName={user.name} initialShares={shares} />}
         </div>
       </div>

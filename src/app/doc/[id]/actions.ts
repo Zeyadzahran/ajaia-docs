@@ -5,6 +5,7 @@ import { updateDocument } from "@/lib/documents";
 import { getCurrentUser } from "@/lib/session";
 import { removeShare, shareDocument } from "@/lib/sharing";
 import { contentSchema, titleSchema } from "@/lib/validation";
+import { snapshotIfDue } from "@/lib/versions";
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -21,7 +22,9 @@ export async function saveContent(id: string, json: string): Promise<Result> {
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
   const saved = await updateDocument(id, user.id, { content: parsed.data as Prisma.InputJsonValue });
-  return saved ? { ok: true } : { ok: false, error: NO_ACCESS };
+  if (!saved) return { ok: false, error: NO_ACCESS };
+  await snapshotIfDue(id, user.id);
+  return { ok: true };
 }
 
 export async function renameDocument(id: string, title: unknown): Promise<Result<{ title: string }>> {
