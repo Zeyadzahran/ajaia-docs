@@ -38,3 +38,16 @@ body {
   color: #94a3b8;
   pointer-events: none;
 }
+
+@media print {
+  @page { margin: 20mm; }
+  body { background: white; color: black; }
+  body > header, body > header + div, .sticky { display: none !important; }
+  body > div.flex { display: block; }
+  .doc-content { min-height: 0; }
+  .doc-content h1, .doc-content h2, .doc-content h3 { break-after: avoid; }
+  .doc-content pre, .doc-content blockquote { break-inside: avoid; }
+  div:has(> .doc-content), div:has(> .tiptap), div:has(> div > .tiptap) {
+    border: 0; box-shadow: none; padding: 0; max-width: none;
+  }
+}

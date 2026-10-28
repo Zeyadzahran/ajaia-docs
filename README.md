@@ -50,3 +50,11 @@ src/lib/documents.ts     all document queries; access rule lives in canAccess()
 src/lib/session.ts       mocked sign-in (cookie holds the user id)
 src/app/                 pages and server actions
 ```
+
+## Import and export
+
+Use **Import file** to turn `.txt`, `.md`, or `.docx` into a new editable document owned by you. Maximum upload: 2 MB. Empty, unreadable, and unsupported files are rejected. The converted document must also fit the editor's ~1 MB JSON limit. Samples are in `samples/`.
+
+Plain text preserves paragraphs and line breaks. Markdown and Word preserve supported headings, emphasis, links, and lists; images, tables, page layouts, and unsupported formatting are dropped or flattened. Import does not retain the original file. Text files should use UTF-8.
+
+The editor's **Export** menu downloads the current content as Markdown (underline uses HTML `<u>`), or opens **Print / Save as PDF**. Markdown export includes unsaved local edits. PDF output uses your browser's print settings.

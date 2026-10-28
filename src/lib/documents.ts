@@ -63,7 +63,7 @@ export async function updateDocument(
   return count === 1;
 }
 
-export async function createDocument(ownerId: string, title = "Untitled document") {
-  const doc = await prisma.document.create({ data: { ownerId, title }, select: { id: true } });
+export async function createDocument(ownerId: string, title = "Untitled document", content?: Prisma.InputJsonValue) {
+  const doc = await prisma.document.create({ data: { ownerId, title, ...(content === undefined ? {} : { content }) }, select: { id: true } });
   return doc.id;
 }

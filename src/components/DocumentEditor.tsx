@@ -4,6 +4,7 @@ import { EditorContent, useEditor, useEditorState, type Editor, type JSONContent
 import { Placeholder } from "@tiptap/extensions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { saveContent } from "@/app/doc/[id]/actions";
+import { ExportMenu } from "@/components/ExportMenu";
 import { editorExtensions } from "@/lib/editor-schema";
 
 type SaveState = "saved" | "unsaved" | "saving" | "error";
@@ -85,6 +86,7 @@ export function DocumentEditor({ documentId, initialContent }: { documentId: str
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-2">
           {/* Mount the toolbar only once the editor exists: useEditorState won't notice it arriving later. */}
           {editor ? <Toolbar editor={editor} /> : <div className="h-9" />}
+          <ExportMenu editor={editor} />
           <SaveStatus state={saveState} error={error} onRetry={locked || !editor ? undefined : () => save(editor)} />
         </div>
       </div>
