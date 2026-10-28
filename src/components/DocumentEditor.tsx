@@ -106,7 +106,7 @@ export function DocumentEditor({
   return (
     <div className="flex flex-1 flex-col">
       <div className="sticky top-0 z-10 border-b border-ink-200 bg-ink-0">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-6">
           {readOnly ? (
             <p className="mr-auto flex h-9 items-center gap-2 text-sm text-ink-600">
               <EyeIcon size={16} />

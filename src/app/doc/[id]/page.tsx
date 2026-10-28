@@ -43,9 +43,9 @@ export default async function DocumentPage({ params }: PageProps<"/doc/[id]">) {
 
   return (
     <>
-      <AppHeader user={user} />
+      <AppHeader user={user} wide />
       <div className="bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 pt-3 pb-1 sm:flex-nowrap sm:px-6">
+        <div className="flex flex-wrap items-center gap-2 px-4 pt-3 pb-1 sm:flex-nowrap sm:px-6">
           <Link href="/" className={button("ghost", "icon")} aria-label="Back to all documents" title="All documents">
             <ArrowLeftIcon size={18} />
           </Link>

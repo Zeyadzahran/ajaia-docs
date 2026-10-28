@@ -5,10 +5,11 @@ import { Logo } from "@/components/Logo";
 import { button } from "@/components/ui";
 import type { User } from "@/lib/session";
 
-export function AppHeader({ user }: { user: User }) {
+// `wide` lines the header up with full-width pages such as the editor.
+export function AppHeader({ user, wide = false }: { user: User; wide?: boolean }) {
   return (
     <header className="border-b border-ink-200 bg-white">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+      <div className={`flex h-14 items-center justify-between px-4 sm:px-6 ${wide ? "" : "mx-auto max-w-6xl"}`}>
         <Link href="/" aria-label="All documents" className="rounded-lg">
           <Logo />
         </Link>
