@@ -61,6 +61,31 @@ describe.skipIf(!hasDb)("version history and presence", async () => {
     expect((await listVersions(docId, "alice"))?.[0].excerpt).toBe("latest text");
   });
 
+  it("creates one snapshot when saves arrive at the same moment", async () => {
+    const fresh = await createDocument("alice", "Concurrent snapshot test");
+    try {
+      const results = await Promise.all([1, 2, 3].map(() => snapshotIfDue(fresh, "alice")));
+      expect(results.filter(Boolean)).toHaveLength(1);
+      expect(await prisma.documentVersion.count({ where: { documentId: fresh } })).toBe(1);
+    } finally {
+      await prisma.document.delete({ where: { id: fresh } });
+    }
+  });
+
+  it("never loses an edit that races a restore", async () => {
+    const oldest = (await listVersions(docId, "alice"))!.at(-1)!;
+    await Promise.all([
+      restoreVersion(oldest.id, "bob"),
+      updateDocument(docId, "alice", { content: paragraph("racing edit") }),
+    ]);
+
+    // Either the edit landed after the restore (it's in the doc) or before it (it's in the backup).
+    const doc = await getDocumentFor(docId, "alice");
+    const versions = await prisma.documentVersion.findMany({ where: { documentId: docId }, select: { content: true } });
+    const everything = [doc?.content, ...versions.map((v) => v.content)].map((c) => JSON.stringify(c)).join("\n");
+    expect(everything).toContain("racing edit");
+  });
+
   it("hides history from people without access", async () => {
     await prisma.documentShare.delete({ where: { documentId_userId: { documentId: docId, userId: "carol" } } });
     expect(await listVersions(docId, "carol")).toBeNull();

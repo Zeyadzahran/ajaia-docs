@@ -14,21 +14,31 @@ export type VersionSummary = {
   createdByName: string;
 };
 
+// Locks the document row until the transaction ends. Saves (UPDATE), snapshots and
+// restores on the same document wait for each other, so each one re-reads the latest state.
+async function lockDocument(tx: Prisma.TransactionClient, docId: string) {
+  const rows = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM documents WHERE id = ${docId}::uuid FOR UPDATE`;
+  return rows.length === 1;
+}
+
 // Called after a successful save. The caller has already checked edit access.
 export async function snapshotIfDue(docId: string, userId: string) {
-  const latest = await prisma.documentVersion.findFirst({
-    where: { documentId: docId },
-    orderBy: { createdAt: "desc" },
-    select: { createdAt: true },
-  });
-  if (latest && Date.now() - latest.createdAt.getTime() < SNAPSHOT_EVERY_MS) return false;
+  return prisma.$transaction(async (tx) => {
+    if (!(await lockDocument(tx, docId))) return false;
 
-  const doc = await prisma.document.findUnique({ where: { id: docId }, select: { title: true, content: true } });
-  if (!doc) return false;
-  await prisma.documentVersion.create({
-    data: { documentId: docId, title: doc.title, content: doc.content as Prisma.InputJsonValue, createdById: userId },
+    const latest = await tx.documentVersion.findFirst({
+      where: { documentId: docId },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+    if (latest && Date.now() - latest.createdAt.getTime() < SNAPSHOT_EVERY_MS) return false;
+
+    const doc = await tx.document.findUniqueOrThrow({ where: { id: docId }, select: { title: true, content: true } });
+    await tx.documentVersion.create({
+      data: { documentId: docId, title: doc.title, content: doc.content as Prisma.InputJsonValue, createdById: userId },
+    });
+    return true;
   });
-  return true;
 }
 
 // Returns null when the user can't open the document.
@@ -58,22 +68,25 @@ export async function restoreVersion(versionId: string, userId: string) {
   const version = await prisma.documentVersion.findUnique({ where: { id: versionId } });
   if (!version) return false;
 
-  const doc = await prisma.document.findFirst({
-    where: { id: version.documentId, ...canEdit(userId) },
-    select: { id: true, title: true, content: true },
-  });
-  if (!doc) return false;
+  return prisma.$transaction(async (tx) => {
+    if (!(await lockDocument(tx, version.documentId))) return false;
 
-  await prisma.$transaction([
-    prisma.documentVersion.create({
+    // Read the current state under the lock, so the backup holds exactly what gets replaced.
+    const doc = await tx.document.findFirst({
+      where: { id: version.documentId, ...canEdit(userId) },
+      select: { id: true, title: true, content: true },
+    });
+    if (!doc) return false;
+
+    await tx.documentVersion.create({
       data: { documentId: doc.id, title: doc.title, content: doc.content as Prisma.InputJsonValue, createdById: userId },
-    }),
-    prisma.document.update({
+    });
+    await tx.document.update({
       where: { id: doc.id },
       data: { title: version.title, content: version.content as Prisma.InputJsonValue },
-    }),
-  ]);
-  return true;
+    });
+    return true;
+  });
 }
 
 // First ~100 characters of text, for the history list.
