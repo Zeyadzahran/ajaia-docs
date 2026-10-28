@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ajaia Docs
 
-## Getting Started
+A lightweight collaborative document editor: create, edit and share rich-text documents.
 
-First, run the development server:
+- **Live:** https://ajaia-docs-zeyad.vercel.app
+- **Stack:** Next.js 16 (App Router, Server Actions) · Prisma 7 · Postgres (Neon) · TipTap · Tailwind
+
+## Test accounts
+
+Sign-in is mocked: pick a seeded user on the sign-in page (no passwords).
+
+| User | Email | Has |
+|---|---|---|
+| Alice Chen | alice@example.com | Owns "Welcome to Ajaia Docs", shared with Bob |
+| Bob Martin | bob@example.com | Sees Alice's doc under *Shared with me* |
+| Carol Diaz | carol@example.com | No documents; use her to check access is denied |
+
+## Run locally
+
+Requirements: Node.js 20+ and a Postgres database (a free [Neon](https://neon.tech) database works).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # then set DATABASE_URL (and DATABASE_URL_UNPOOLED if your provider has one)
+npm run setup                # applies migrations and seeds the demo users
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`npm run setup` must run before the first `npm run dev`: without the tables and seeded users the sign-in page has nobody to sign in as. It is safe to run again; the seed upserts by fixed ids.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+If the project is linked to Vercel, `npx vercel env pull .env.local` fills in the database URLs.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Scripts
 
-## Learn More
+| Script | What it does |
+|---|---|
+| `npm run dev` | Start the dev server |
+| `npm run setup` | `db:migrate` + `db:seed` |
+| `npm run db:migrate` | Apply Prisma migrations (`prisma migrate deploy`) |
+| `npm run db:seed` | Seed demo users and the shared welcome doc |
+| `npm run build` | Generate the Prisma client and build for production |
+| `npm test` | Run the automated tests |
 
-To learn more about Next.js, take a look at the following resources:
+## Project layout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+prisma/schema.prisma     data model: users, documents, document_shares
+prisma/seed.ts           demo users + shared welcome doc
+src/lib/documents.ts     all document queries; access rule lives in canAccess()
+src/lib/session.ts       mocked sign-in (cookie holds the user id)
+src/app/                 pages and server actions
+```
