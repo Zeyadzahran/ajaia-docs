@@ -50,11 +50,24 @@ function DocumentList({ title, docs, empty }: { title: string; docs: DocumentSum
         <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
           {docs.map((doc) => (
             <li key={doc.id}>
-              <Link href={`/doc/${doc.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
-                <span className="font-medium">{doc.title}</span>
-                <span className="text-sm text-slate-500">
-                  {doc.role === "shared" && <span className="mr-3">Owner: {doc.ownerName}</span>}
-                  Edited {timeAgo(doc.updatedAt)}
+              <Link
+                href={`/doc/${doc.id}`}
+                className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50"
+              >
+                <span className="min-w-0 truncate font-medium">{doc.title}</span>
+                <span className="flex shrink-0 items-center gap-3 text-sm text-slate-500">
+                  {doc.role === "owner" && doc.shareCount > 0 && (
+                    <Tag>
+                      Shared with {doc.shareCount} {doc.shareCount === 1 ? "person" : "people"}
+                    </Tag>
+                  )}
+                  {doc.role !== "owner" && (
+                    <>
+                      <span className="hidden sm:inline">Owner: {doc.ownerName}</span>
+                      <Tag>{doc.role === "editor" ? "Can edit" : "Can view"}</Tag>
+                    </>
+                  )}
+                  <span className="hidden sm:inline">Edited {timeAgo(doc.updatedAt)}</span>
                 </span>
               </Link>
             </li>
@@ -63,6 +76,10 @@ function DocumentList({ title, docs, empty }: { title: string; docs: DocumentSum
       )}
     </section>
   );
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{children}</span>;
 }
 
 function timeAgo(date: Date) {
